@@ -101,7 +101,7 @@ SKIP_HARDWARE_CHECK="false";
 SKIP_VERSION_CHECK="false";
 SKIP_DOMAIN_CHECK="false";
 
-COMMUNITY_PORT=80;
+COMMUNITY_PORT=8090;
 
 while [ "$1" != "" ]; do
 	case $1 in
@@ -496,7 +496,7 @@ while [ "$1" != "" ]; do
 			echo "      -skiphc, --skiphardwarecheck      skip hardware check (true|false)"
 			echo "      -skipvc, --skipversioncheck       skip version check while update (true|false)"
 			echo "      -skipdc, --skipdomaincheck        skip domain check when installing mail server (true|false)"
-			echo "      -cp, --communityport              community port (default value 80)"
+			echo "      -cp, --communityport              community port (default value 8081)"
 			echo "      -mk, --machinekey                 setting for core.machinekey"
 			echo "      -je, --jwtenabled                 specifies the enabling the JWT validation (true|false)"
 			echo "      -jh, --jwtheader                  defines the http header that will be used to send the JWT"
@@ -761,7 +761,7 @@ make_swap () {
 }
 
 check_ports () {
-	RESERVED_PORTS=(443 5222 25 143 587 4190 8081 3306);
+	RESERVED_PORTS=(8443 5222 25 143 587 4190 8081 3306);
 	ARRAY_PORTS=();
 	USED_PORTS="";
 
@@ -783,10 +783,10 @@ check_ports () {
 	fi
 
 	if [ "$INSTALL_COMMUNITY_SERVER" == "true" ]; then
-		ARRAY_PORTS=(${ARRAY_PORTS[@]} "$COMMUNITY_PORT" "443" "5222");
+		ARRAY_PORTS=(${ARRAY_PORTS[@]} "$COMMUNITY_PORT" "8443" "5222");
 	elif [ "$INSTALL_DOCUMENT_SERVER" == "true" ]; then
 		if [ "${USE_AS_EXTERNAL_SERVER}" == "true" ]; then
-			ARRAY_PORTS=(${ARRAY_PORTS[@]} "$COMMUNITY_PORT" "443");
+			ARRAY_PORTS=(${ARRAY_PORTS[@]} "$COMMUNITY_PORT" "8443");
 		fi
 	fi
 
@@ -1229,8 +1229,8 @@ install_document_server () {
 		args+=(--name "$DOCUMENT_CONTAINER_NAME");
 
 		if [ "${USE_AS_EXTERNAL_SERVER}" == "true" ]; then
-			args+=(-p 80:80);
-			args+=(-p 443:443);
+			args+=(-p 8081:8081);
+			args+=(-p 8443:8443);
 		fi
 
 		if [[ -n ${JWT_SECRET} ]]; then
@@ -1531,7 +1531,7 @@ install_community_server () {
 
 			if [ "$CURRENT_IMAGE_NAME" != "$COMMUNITY_IMAGE_NAME" ] || ([ "$CURRENT_IMAGE_VERSION" != "$COMMUNITY_VERSION" ] || [ "$SKIP_VERSION_CHECK" == "true" ]) || [ "$MOVE_COMMUNITY_SERVER_DATABASE" == "true" ]; then
 				check_bindings $COMMUNITY_SERVER_ID "/var/lib/mysql";
-				COMMUNITY_PORT=$(docker port $COMMUNITY_SERVER_ID 80 | sed 's/.*://' | head -n1)
+				COMMUNITY_PORT=$(docker port $COMMUNITY_SERVER_ID 8081 | sed 's/.*://' | head -n1)
 				stop_community_server_mysql
 				remove_container ${COMMUNITY_CONTAINER_NAME}
 			else
@@ -1547,7 +1547,7 @@ install_community_server () {
 		else
 			if [ "$RESTART_COMMUNITY_SERVER" == "true" ]; then
 				check_bindings $COMMUNITY_SERVER_ID "/var/lib/mysql";
-				COMMUNITY_PORT=$(docker port $COMMUNITY_SERVER_ID 80 | sed 's/.*://' | head -n1)
+				COMMUNITY_PORT=$(docker port $COMMUNITY_SERVER_ID 8081 | sed 's/.*://' | head -n1)
 				stop_community_server_mysql
 				remove_container ${COMMUNITY_CONTAINER_NAME}
 			else
@@ -1561,8 +1561,8 @@ install_community_server () {
 	if [ "$RUN_COMMUNITY_SERVER" == "true" ]; then
 		args=();
 		args+=(--name "$COMMUNITY_CONTAINER_NAME");
-		args+=(-p "$COMMUNITY_PORT:80");
-		args+=(-p 443:443);
+		args+=(-p "$COMMUNITY_PORT:8081");
+		args+=(-p 8443:8443);
 		args+=(-p 5222:5222);
 		args+=(--cgroupns host);
 
@@ -1628,7 +1628,7 @@ install_community_server () {
 		fi
 
 		if [[ -n ${CONTROL_PANEL_ID} ]]; then
-			args+=(-e "CONTROL_PANEL_PORT_80_TCP=80");
+			args+=(-e "CONTROL_PANEL_PORT_80_TCP=8081");
 			args+=(-e "CONTROL_PANEL_PORT_80_TCP_ADDR=$CONTROLPANEL_CONTAINER_NAME");
 		fi
 
